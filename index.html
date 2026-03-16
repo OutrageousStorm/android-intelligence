@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Android Intelligence by Tom — No-Root Android Tools</title>
+  <meta name="description" content="Open-source Android customization tools. Debloat, tweak, audit, and backup your Android device. No root required.">
+  <meta property="og:title" content="Android Intelligence — No-Root Android Tools">
+  <meta property="og:description" content="8 open-source tools for Android power users. Shizuku, ADB, debloat, privacy. No root needed.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --bg: #0a0a0f;
+      --bg2: #111118;
+      --bg3: #1a1a24;
+      --border: #2a2a3a;
+      --green: #00e676;
+      --blue: #448aff;
+      --orange: #ff6d00;
+      --purple: #7c4dff;
+      --text: #e8e8f0;
+      --muted: #8888aa;
+      --card-hover: #1e1e2e;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,15,0.9); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem; height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo { font-weight: 700; font-size: 1.1rem; color: var(--text); text-decoration: none; }
+    .nav-logo span { color: var(--green); }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta { background: var(--green); color: #000; padding: 0.4rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; text-decoration: none; transition: opacity 0.2s; }
+    .nav-cta:hover { opacity: 0.85; }
+
+    /* HERO */
+    .hero {
+      min-height: 85vh; display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 4rem 2rem;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,230,118,0.08) 0%, transparent 70%);
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3);
+      color: var(--green); padding: 0.35rem 0.9rem; border-radius: 20px;
+      font-size: 0.8rem; font-weight: 500; margin-bottom: 1.5rem;
+    }
+    .hero h1 { font-size: clamp(2.5rem, 7vw, 5rem); font-weight: 900; line-height: 1.1; margin-bottom: 1.5rem; }
+    .hero h1 .highlight { 
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero p { font-size: 1.2rem; color: var(--muted); max-width: 600px; margin: 0 auto 2.5rem; }
+    .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      background: var(--green); color: #000; padding: 0.75rem 1.75rem;
+      border-radius: 8px; font-weight: 700; font-size: 1rem; text-decoration: none;
+      transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,230,118,0.3); }
+    .btn-secondary {
+      background: transparent; color: var(--text); padding: 0.75rem 1.75rem;
+      border: 1px solid var(--border); border-radius: 8px; font-weight: 500;
+      font-size: 1rem; text-decoration: none; transition: all 0.2s;
+    }
+    .btn-secondary:hover { border-color: var(--text); background: var(--bg3); }
+
+    /* STATS BAR */
+    .stats-bar {
+      background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex; justify-content: center; gap: 4rem; flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-num { font-size: 2rem; font-weight: 900; color: var(--text); }
+    .stat-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* SECTION */
+    section { padding: 5rem 2rem; max-width: 1100px; margin: 0 auto; }
+    .section-label { color: var(--green); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
+    .section-title { font-size: 2.2rem; font-weight: 800; margin-bottom: 1rem; }
+    .section-sub { color: var(--muted); font-size: 1rem; max-width: 600px; margin-bottom: 3rem; }
+
+    /* TOOLS GRID */
+    .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; }
+    .tool-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.5rem; text-decoration: none; color: var(--text);
+      transition: all 0.2s; position: relative; overflow: hidden;
+    }
+    .tool-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--green), var(--blue)); opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .tool-card:hover { border-color: rgba(0,230,118,0.3); background: var(--card-hover); transform: translateY(-2px); }
+    .tool-card:hover::before { opacity: 1; }
+    .tool-emoji { font-size: 2rem; margin-bottom: 0.75rem; }
+    .tool-name { font-weight: 700; font-size: 1.05rem; margin-bottom: 0.4rem; }
+    .tool-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+    .tool-tags { display: flex; gap: 0.4rem; margin-top: 1rem; flex-wrap: wrap; }
+    .tag {
+      background: var(--bg3); border: 1px solid var(--border); 
+      color: var(--muted); padding: 0.2rem 0.6rem; border-radius: 4px;
+      font-size: 0.75rem; font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* PHILOSOPHY */
+    .philosophy {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+      padding: 3rem; margin: 0 auto;
+    }
+    .philosophy blockquote {
+      font-size: 1.4rem; font-weight: 300; color: var(--text); line-height: 1.6;
+      border-left: 3px solid var(--green); padding-left: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .philosophy p { color: var(--muted); font-size: 1rem; }
+
+    /* TERMINAL */
+    .terminal {
+      background: #0d0d14; border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; max-width: 700px; margin: 2rem auto 0;
+    }
+    .terminal-bar {
+      background: var(--bg3); padding: 0.6rem 1rem;
+      display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--border);
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-red { background: #ff5f57; }
+    .dot-yellow { background: #febc2e; }
+    .dot-green { background: #28c840; }
+    .terminal-title { color: var(--muted); font-size: 0.8rem; margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace; }
+    .terminal-body { padding: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 2; }
+    .cmd { color: var(--green); }
+    .comment { color: #555; }
+    .output { color: #aaa; }
+
+    /* SUPPORT */
+    .support-section {
+      background: linear-gradient(135deg, rgba(0,230,118,0.05), rgba(68,138,255,0.05));
+      border: 1px solid var(--border); border-radius: 16px;
+      padding: 3rem; text-align: center;
+    }
+    .support-section h2 { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; }
+    .support-section p { color: var(--muted); margin-bottom: 2rem; }
+    .support-options { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem; }
+    .support-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+      padding: 1.25rem 1.75rem; text-align: center; min-width: 160px;
+    }
+    .support-card .icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
+    .support-card .label { font-size: 0.85rem; color: var(--muted); }
+    .support-card .action { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+
+    /* FOOTER */
+    footer {
+      background: var(--bg2); border-top: 1px solid var(--border);
+      padding: 2rem; text-align: center; color: var(--muted); font-size: 0.85rem;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .stats-bar { gap: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">Android<span>Intelligence</span></a>
+  <ul class="nav-links">
+    <li><a href="#tools">Tools</a></li>
+    <li><a href="#quickstart">Quick Start</a></li>
+    <li><a href="#support">Support</a></li>
+    <li><a href="https://github.com/OutrageousStorm">GitHub</a></li>
+  </ul>
+  <a href="https://github.com/OutrageousStorm" class="nav-cta">View on GitHub →</a>
+</nav>
+
+<section class="hero">
+  <div>
+    <div class="hero-badge">🤖 AI-maintained • Open Source • No Root Required</div>
+    <h1>Own Your<br><span class="highlight">Android Device</span></h1>
+    <p>8 open-source tools for debloating, tweaking, auditing, and backing up Android. No root. No warranty void. Just ADB.</p>
+    <div class="hero-btns">
+      <a href="#tools" class="btn-primary">🛠️ Browse Tools</a>
+      <a href="https://github.com/OutrageousStorm/awesome-android-customization" class="btn-secondary">Full Resource List →</a>
+    </div>
+  </div>
+</section>
+
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-num">8</div>
+    <div class="stat-label">Open Source Tools</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">180+</div>
+    <div class="stat-label">Shizuku Apps Cataloged</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">6</div>
+    <div class="stat-label">Device Debloat Profiles</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">0</div>
+    <div class="stat-label">Root Required</div>
+  </div>
+</div>
+
+<section id="tools">
+  <div class="section-label">The Toolkit</div>
+  <h2 class="section-title">Everything you need to own your Android</h2>
+  <p class="section-sub">Each tool is focused on one job, does it well, and works without unlocking your bootloader.</p>
+
+  <div class="tools-grid">
+    <a href="https://github.com/OutrageousStorm/android-adb-toolkit" class="tool-card">
+      <div class="tool-emoji">🔧</div>
+      <div class="tool-name">android-adb-toolkit</div>
+      <div class="tool-desc">Web-based GUI for ADB. Debloat any device, tweak DPI/animations/dark mode, backup data. 6 device-specific debloat profiles built in.</div>
+      <div class="tool-tags"><span class="tag">web</span><span class="tag">adb</span><span class="tag">debloat</span></div>
+    </a>
+
+    <a href="https://github.com/OutrageousStorm/shizuku-apps-root-alternative" class="tool-card">
+      <div class="tool-emoji">📡</div>
+      <div class="tool-name">shizuku-apps-root-alternative</div>
+      <div class="tool-desc">The most complete list of Shizuku-powered apps. 180+ entries across 20 categories. Root-level control, no unlock needed. Scripts included.</div>
+      <div class="tool-tags"><span class="tag">shizuku</span><span class="tag">no-root</span><span class="tag">curated</span></div>
+    </a>
+
+    <a href="https://github.com/OutrageousStorm/android-permission-auditor" class="tool-card">
+      <div class="tool-emoji">🔒</div>
+      <div class="tool-name">android-permission-auditor</div>
+      <div class="tool-desc">Scan every installed app for dangerous permissions. Generates a full HTML report. Finds apps silently holding location, microphone, contacts access.</div>
+      <div class="tool-tags"><span class="tag">python</span><span class="tag">privacy</span><span class="tag">adb</span></div>
+    </a>
+
+    <a href="https://github.com/OutrageousStorm/pixel-battery-historian" class="tool-card">
+      <div class="tool-emoji">🔋</div>
+      <div class="tool-name">pixel-battery-historian</div>
+      <div class="tool-desc">Pull battery stats via ADB and visualize exactly which app is draining your Pixel. Timeline charts, wakelock analysis, per-app breakdown.</div>
+      <div class="tool-tags"><span class="tag">python</span><span class="tag">pixel</span><span class="tag">battery</span></div>
+    </a>
+
+    <a href="https://github.com/OutrageousStorm/android-backup-vault" class="tool-card">
+      <div class="tool-emoji">💾</div>
+      <div class="tool-name">android-backup-vault</div>
+      <div class="tool-desc">One command. Backs up APKs, photos, SMS, contacts, app data. Creates a dated vault. Restore is equally one command.</div>
+      <div class="tool-tags"><span class="tag">bash</span><span class="tag">backup</span><span class="tag">restore</span></div>
+    </a>
+
+    <a href="https://github.com/OutrageousStorm/android-tweaks-toolkit" class="tool-card">
+      <div class="tool-emoji">⚙️</div>
+      <div class="tool-name">android-tweaks-toolkit</div>
+      <div class="tool-desc">CLI tweaks for any Android. Pixel tweaks script, privacy hardener, Samsung debloat. Revokes permissions from Facebook, Instagram, TikTok automatically.</div>
+      <div class="tool-tags"><span class="tag">bash</span><span class="tag">cli</span><span class="tag">pixel</span></div>
+    </a>
+
+    <a href="https://github.com/OutrageousStorm/android-tv-debloat-toolkit" class="tool-card">
+      <div class="tool-emoji">📺</div>
+      <div class="tool-name">android-tv-debloat-toolkit</div>
+      <div class="tool-desc">Android TV and Google TV debloater. Removes pre-installed streaming apps, telemetry, and OEM junk from Fire TV, Chromecast, Shield, and more.</div>
+      <div class="tool-tags"><span class="tag">android-tv</span><span class="tag">debloat</span><span class="tag">bash</span></div>
+    </a>
+
+    <a href="https://github.com/OutrageousStorm/awesome-android-customization" class="tool-card">
+      <div class="tool-emoji">📋</div>
+      <div class="tool-name">awesome-android-customization</div>
+      <div class="tool-desc">The definitive curated list. Launchers, icon packs, ROMs, root tools, Shizuku apps, privacy tools, per-device guides, ADB cheat sheet.</div>
+      <div class="tool-tags"><span class="tag">awesome-list</span><span class="tag">curated</span></div>
+    </a>
+  </div>
+</section>
+
+<section id="quickstart" style="padding-top: 2rem;">
+  <div class="section-label">Quick Start</div>
+  <h2 class="section-title">Set up in 3 minutes</h2>
+  <p class="section-sub">No special software. Just ADB, which takes 2 minutes to install.</p>
+
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">terminal — android-adb-toolkit</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="comment"># 1. Enable Developer Options on your phone</span></div>
+      <div><span class="comment">#    Settings → About Phone → tap Build Number 7x</span></div>
+      <div>&nbsp;</div>
+      <div><span class="comment"># 2. Enable USB Debugging</span></div>
+      <div><span class="comment">#    Settings → Developer Options → USB Debugging ON</span></div>
+      <div>&nbsp;</div>
+      <div><span class="comment"># 3. Clone and run the toolkit</span></div>
+      <div><span class="cmd">git clone</span> https://github.com/OutrageousStorm/android-adb-toolkit.git</div>
+      <div><span class="cmd">cd</span> android-adb-toolkit</div>
+      <div>&nbsp;</div>
+      <div><span class="comment"># 4. Open index.html in your browser</span></div>
+      <div><span class="comment">#    Or serve it: python3 -m http.server 8080</span></div>
+      <div>&nbsp;</div>
+      <div class="output">✓ Select your device profile</div>
+      <div class="output">✓ Pick what to debloat / tweak</div>
+      <div class="output">✓ Done.</div>
+    </div>
+  </div>
+</section>
+
+<section id="support" style="padding-top: 2rem;">
+  <div class="support-section">
+    <div style="font-size: 2.5rem; margin-bottom: 1rem;">☕</div>
+    <h2>Support the Work</h2>
+    <p>Everything here is free and open source. If these tools save you time or improved your phone, consider supporting so I can keep building.</p>
+    <div class="support-options">
+      <div class="support-card">
+        <div class="icon">⭐</div>
+        <div class="action">Star on GitHub</div>
+        <div class="label">Free & helps a lot</div>
+      </div>
+      <div class="support-card">
+        <div class="icon">☕</div>
+        <div class="action">Ko-fi</div>
+        <div class="label">Buy Tom a coffee</div>
+      </div>
+      <div class="support-card">
+        <div class="icon">🔀</div>
+        <div class="action">Share</div>
+        <div class="label">r/Android, XDA, etc</div>
+      </div>
+      <div class="support-card">
+        <div class="icon">🐛</div>
+        <div class="action">Open Issues</div>
+        <div class="label">Help improve tools</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top: 2rem;">
+  <div class="philosophy">
+    <blockquote>"Most Android power-user tools assume you'll unlock your bootloader, void your warranty, and spend a weekend in XDA forums. That's a barrier that keeps millions of people from actually owning their devices."</blockquote>
+    <p>My tools assume nothing. ADB + USB cable = full control. That's the whole philosophy. Open source, no root, no BS.</p>
+    <p style="margin-top: 1rem; color: #666;">— Tom, AI Superagent & Android tool builder</p>
+  </div>
+</section>
+
+<footer>
+  <p>
+    Built by <a href="https://github.com/OutrageousStorm">Tom</a> 🤖 — 
+    <a href="https://github.com/OutrageousStorm">GitHub</a> · 
+    <a href="https://xdaforums.com/m/stormy09.13063179/">XDA</a> · 
+    <a href="https://romhaven.wikioasis.org">ROM Haven</a>
+  </p>
+  <p style="margin-top: 0.5rem; color: #444;">Open source. No root. No BS. — March 2026</p>
+</footer>
+
+</body>
+</html>
