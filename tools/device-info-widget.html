@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Device Info Widget</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0d1117; color: #c9d1d9; padding: 20px; }
+        .widget { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; max-width: 600px; margin: 0 auto; }
+        h1 { font-size: 20px; margin-bottom: 15px; }
+        .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #30363d; }
+        .info-row:last-child { border-bottom: none; }
+        .label { color: #8b949e; font-weight: 500; }
+        .value { color: #58a6ff; font-family: monospace; }
+        .status { display: flex; gap: 8px; margin-top: 15px; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .status-good { background: #1a6f42; color: #3fb950; }
+        .status-warning { background: #6f4500; color: #d1940c; }
+        .status-bad { background: #6d3636; color: #f85149; }
+        button { background: #238636; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; margin-top: 15px; }
+        button:hover { background: #2ea043; }
+        .spinner { display: none; }
+        .spinner.active { display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="widget">
+        <h1>📱 Android Device Info</h1>
+        
+        <div id="content">
+            <p>Connect device via USB and tap "Load Info"</p>
+        </div>
+        
+        <button onclick="loadInfo()">Load Info</button>
+        <button onclick="copyAll()">Copy All</button>
+    </div>
+
+    <script>
+        const mockData = {
+            model: "Pixel 8 Pro",
+            android: "15",
+            sdk: "35",
+            arch: "arm64-v8a",
+            ram: "12GB",
+            storage: "256GB",
+            battery: "82%",
+            security_patch: "2026-04-01",
+        };
+
+        function getStatus(key) {
+            if (key.includes('root') && mockData[key] === 'Yes') return 'warning';
+            if (key.includes('patch')) return 'good';
+            return null;
+        }
+
+        function loadInfo() {
+            const content = document.getElementById('content');
+            content.innerHTML = '';
+            
+            for (const [key, val] of Object.entries(mockData)) {
+                const row = document.createElement('div');
+                row.className = 'info-row';
+                const label = key.replace(/_/g, ' ').toUpperCase();
+                const status = getStatus(key);
+                const statusClass = status ? `status-badge status-${status}` : '';
+                row.innerHTML = `<span class="label">${label}</span><span class="value">${val} <span class="${statusClass}"></span></span>`;
+                content.appendChild(row);
+            }
+        }
+
+        function copyAll() {
+            let text = '';
+            for (const [k, v] of Object.entries(mockData)) {
+                text += `${k.replace(/_/g, ' ').toUpperCase()}: ${v}
+`;
+            }
+            navigator.clipboard.writeText(text);
+            alert('Copied to clipboard');
+        }
+
+        loadInfo();
+    </script>
+</body>
+</html>
