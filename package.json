@@ -1,0 +1,23 @@
+{
+  "name": "android-intelligence",
+  "version": "1.0.0",
+  "description": "Android tools and utilities",
+  "main": "index.js",
+  "scripts": {
+    "lookup": "ts-node cli/device-lookup.ts",
+    "build": "tsc",
+    "test": "echo no tests"
+  },
+  "keywords": [
+    "android",
+    "tools",
+    "rom",
+    "adb"
+  ],
+  "author": "OutrageousStorm",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "ts-node": "^10.0.0"
+  }
+}
