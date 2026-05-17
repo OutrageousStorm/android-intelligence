@@ -1,146 +1,108 @@
 #!/usr/bin/env node
 /**
- * Android Intelligence CLI — Unified command-line tool for Android automation
- * Usage: android-intelligence <command> [args]
- *
- * Commands:
- *   info              Show device info
- *   apps              List installed apps
- *   perms <pkg>       Show permissions for app
- *   screen            Take screenshot
- *   battery           Get battery status
- *   monkey <count>    Stress test with random taps
- *   logcat [filter]   Stream logcat with optional filter
+ * Android Intelligence CLI
+ * Query device info, manage apps, and run ADB commands interactively
+ * Usage: node cli.js [command] [args...]
  */
 
 const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const readline = require('readline');
 
-const cmd = process.argv[2];
-const args = process.argv.slice(3);
-
-function adb(command) {
-  try {
-    return execSync(`adb shell ${command}`, { encoding: 'utf8' }).trim();
-  } catch (e) {
-    console.error(`❌ ADB Error: ${e.message.split('\n')[0]}`);
-    process.exit(1);
-  }
-}
-
-function adbExec(command) {
-  try {
-    execSync(`adb shell ${command}`);
-  } catch (e) {
-    console.error(`❌ Error: ${e.message.split('\n')[0]}`);
-  }
-}
-
-const commands = {
-  info() {
-    console.log('\n📱 Device Information\n');
-    const model = adb('getprop ro.product.model');
-    const android = adb('getprop ro.build.version.release');
-    const api = adb('getprop ro.build.version.sdk');
-    const serial = adb('getprop ro.serialno');
-    const cpu = adb('getprop ro.product.cpu.abi');
-    const battery = adb('dumpsys battery | grep -E "(level|status|temp)"');
-    
-    console.log(`Model:         ${model}`);
-    console.log(`Android:       ${android} (API ${api})`);
-    console.log(`Serial:        ${serial}`);
-    console.log(`CPU:           ${cpu}`);
-    console.log(`\nBattery:`);
-    console.log(battery.split('\n').map(l => '  ' + l).join('\n'));
-  },
-
-  apps() {
-    console.log('\n📦 Installed User Apps\n');
-    const apps = adb('pm list packages -3').split('\n');
-    apps.forEach((app, i) => {
-      if (app) console.log(`  ${i+1}. ${app.replace('package:', '')}`);
-    });
-    console.log(`\nTotal: ${apps.length} apps\n`);
-  },
-
-  perms() {
-    const pkg = args[0];
-    if (!pkg) { console.error('Usage: android-intelligence perms <package>'); return; }
-    console.log(`\n🔐 Permissions for ${pkg}\n`);
-    const perms = adb(`dumpsys package ${pkg} | grep android.permission`);
-    if (perms) {
-      console.log(perms);
-    } else {
-      console.log('  (none)');
-    }
-    console.log();
-  },
-
-  screen() {
-    const file = `screenshot_${Date.now()}.png`;
+const adb = (cmd) => {
     try {
-      execSync(`adb exec-out screencap -p > ${file}`);
-      console.log(`✅ Screenshot saved: ${file}`);
+        return execSync(`adb shell ${cmd}`, { encoding: 'utf8' }).trim();
     } catch (e) {
-      console.error('❌ Failed to capture screenshot');
+        return '';
     }
-  },
-
-  battery() {
-    console.log('\n🔋 Battery Status\n');
-    const info = adb('dumpsys battery');
-    const level = info.match(/level: (\d+)/)?.[1] || '?';
-    const status = info.match(/status: (\w+)/)?.[1] || '?';
-    const temp = info.match(/temperature: (\d+)/)?.[1] || '?';
-    const health = info.match(/health: (\w+)/)?.[1] || '?';
-    
-    console.log(`Level:       ${level}%`);
-    console.log(`Status:      ${status}`);
-    console.log(`Temp:        ${temp}°C`);
-    console.log(`Health:      ${health}\n`);
-  },
-
-  monkey() {
-    const count = args[0] || 100;
-    console.log(`🐵 Monkey stress test (${count} events)`);
-    adbExec(`monkey -p com.example -v ${count} 2>/dev/null || true`);
-    console.log('✅ Done');
-  },
-
-  logcat() {
-    const filter = args[0] || '*:V';
-    console.log(`📋 Logcat (${filter}) — press Ctrl+C to stop\n`);
-    try {
-      execSync(`adb logcat ${filter}`, { stdio: 'inherit' });
-    } catch (e) {
-      // Ctrl+C
-    }
-  },
-
-  help() {
-    console.log(`
-🤖 Android Intelligence CLI
-
-Usage: android-intelligence <command> [args]
-
-Commands:
-  info              Show full device information
-  apps              List all installed user apps
-  perms <pkg>       Show permissions for app
-  screen            Take screenshot
-  battery           Show battery status
-  monkey [count]    Stress test with random taps (default 100)
-  logcat [filter]   Stream device logs (default: all)
-  help              This message
-`);
-  }
 };
 
+const commands = {
+    'device-info': () => {
+        console.log('\n📱 Device Info');
+        console.log('Model:', adb('getprop ro.product.model'));
+        console.log('Android:', adb('getprop ro.build.version.release'));
+        console.log('API:', adb('getprop ro.build.version.sdk'));
+        console.log('RAM:', adb('cat /proc/meminfo | grep MemTotal'));
+        console.log('CPU:', adb('nproc'), 'cores');
+        console.log('');
+    },
+    
+    'list-apps': () => {
+        const out = adb('pm list packages -3');
+        const apps = out.split('\n').map(l => l.replace('package:', '')).filter(x => x);
+        console.log(`\n📦 ${apps.length} user-installed apps`);
+        apps.forEach(app => console.log('  ' + app));
+        console.log('');
+    },
+    
+    'wifi': () => {
+        console.log('\n📡 Network');
+        const ssid = adb('dumpsys wifi | grep -oP "mWifiInfo.*?SSID: \K[^,]+"');
+        console.log('Wi-Fi:', ssid || 'disconnected');
+        const ip = adb('ip route | grep src | awk "{print $NF}" | head -1');
+        console.log('IP:', ip);
+        console.log('');
+    },
+    
+    'battery': () => {
+        const level = adb('dumpsys battery | grep level').match(/\d+/);
+        const temp = adb('dumpsys battery | grep temperature').match(/\d+/);
+        const status = adb('dumpsys battery | grep status').replace(/.*?: /, '');
+        console.log('\n🔋 Battery');
+        console.log('Level:', (level ? level[0] : '?') + '%');
+        console.log('Temperature:', (temp ? (temp[0] / 10).toFixed(1) : '?') + '°C');
+        console.log('Status:', status.trim() || 'unknown');
+        console.log('');
+    },
+    
+    'help': () => {
+        console.log(`
+Android Intelligence CLI
+
+Commands:
+  device-info     Show device model, Android version, RAM, CPU
+  list-apps       List all user-installed apps
+  wifi            Show Wi-Fi SSID and IP address
+  battery         Show battery level, temperature, status
+  interactive     Open interactive shell (type 'exit' to quit)
+  help            Show this message
+
+Examples:
+  node cli.js device-info
+  node cli.js list-apps | grep facebook
+  node cli.js interactive
+        `);
+    },
+    
+    'interactive': () => {
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+        });
+        
+        const prompt = () => {
+            rl.question('adb> ', (cmd) => {
+                if (cmd === 'exit') {
+                    rl.close();
+                    return;
+                }
+                const result = adb(cmd);
+                if (result) console.log(result);
+                prompt();
+            });
+        };
+        
+        console.log('\n🔧 Interactive ADB Shell (type "exit" to quit)');
+        prompt();
+    },
+};
+
+const args = process.argv.slice(2);
+const cmd = args[0] || 'help';
+
 if (commands[cmd]) {
-  commands[cmd]();
+    commands[cmd]();
 } else {
-  console.error(`❌ Unknown command: ${cmd}`);
-  commands.help();
-  process.exit(1);
+    console.log(`Unknown command: ${cmd}`);
+    commands['help']();
 }
